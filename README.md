@@ -2,6 +2,8 @@
 
 it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github.com/zeroomega/esp32-mcp2515)
 
+Adding support for **multiple MCP2515** chips on the same SPI bus.
+
 CAN-BUS is a common industrial bus because of its long travel distance, medium communication speed and high reliability. It is commonly found on modern machine tools and as an automotive diagnostic bus. This CAN-BUS Shield gives your esp32/esp8266 CAN-BUS capibility. With an OBD-II converter cable added on and the OBD-II library imported, you are ready to build an onboard diagnostic device or data logger.
 
 - Implements CAN V2.0B at up to 1 Mb/s
