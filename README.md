@@ -1,10 +1,41 @@
 # ESP32 MCP2515 CAN interface library in C, for ESP-IDF framework.
 
 it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github.com/zeroomega/esp32-mcp2515)
+**----- DISCLAIMER: NOT TESTED (yet) -----**
 
-Adding support for **multiple MCP2515** chips on the same SPI bus.
+- Supports **multiple MCP2515 instances** via struct-based object handling
+- All library functions operate on an `MCP2515` pointer (no global state)
+- Allows flexible configuration of:
+  * `MISO`, `MOSI`, `CLK` pins per SPI bus
+  * Separate `CS` and `INT` pins per MCP2515 device
+- Introduced `MCP2515_setupSpi()` function to:
+  * Initialize the selected SPI bus (only once)
+  * Attach individual MCP2515 devices via `spi_bus_add_device()`
 
-**----- DISCLAIMER: NOT WORKING YET -----**
+
+**Example of usage: (not tested as well, should work)**
+```c
+MCP2515 can1 = MCP2515_init(GPIO_NUM_5, GPIO_NUM_4);   // CS, INT for MCP1
+MCP2515 can2 = MCP2515_init(GPIO_NUM_18, GPIO_NUM_19); // CS, INT for MCP2
+
+// Shared SPI bus setup
+MCP2515_setupSpi(can1, SPI2_HOST, GPIO_NUM_13, GPIO_NUM_11, GPIO_NUM_12); // MISO, MOSI, CLK
+MCP2515_setupSpi(can2, SPI2_HOST, GPIO_NUM_13, GPIO_NUM_11, GPIO_NUM_12); // Same bus
+
+// Usage
+MCP2515_reset(can1);
+MCP2515_setBitrate(can1, CAN_500KBPS, MCP_8MHZ);
+MCP2515_setNormalMode(can1);
+
+CAN_FRAME_t frame = { .can_id = 0x123 | CAN_EFF_FLAG, .can_dlc = 8 };
+MCP2515_sendMessageAfterCtrlCheck(can1, &frame);
+```
+
+**Next steps:**
+- Test everything
+- maybe struct for spi bus config
+- modularize the code?
+- we'll see
 
 ---
 
