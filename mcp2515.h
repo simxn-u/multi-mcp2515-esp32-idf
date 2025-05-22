@@ -473,43 +473,43 @@ typedef struct MCP2515_s{
   gpio_num_t int_pin;
 }MCP2515_t[1], *MCP2515;
 
-ERROR_t MCP2515_setMode(const CANCTRL_REQOP_MODE_t mode);
+ERROR_t MCP2515_setMode(MCP2515 MCP2515_Object, const CANCTRL_REQOP_MODE_t mode);
 
-uint8_t MCP2515_readRegister(const REGISTER_t reg);
-void MCP2515_readRegisters(const REGISTER_t reg, uint8_t values[], const uint8_t n);
-void MCP2515_setRegister(const REGISTER_t reg, const uint8_t value);
-void MCP2515_setRegisters(const REGISTER_t reg, const uint8_t values[], const uint8_t n);
-void MCP2515_modifyRegister(const REGISTER_t reg, const uint8_t mask, const uint8_t data);
+uint8_t MCP2515_readRegister(MCP2515 MCP2515_Object, const REGISTER_t reg);
+void MCP2515_readRegisters(MCP2515 MCP2515_Object, const REGISTER_t reg, uint8_t values[], const uint8_t n);
+void MCP2515_setRegister(MCP2515 MCP2515_Object, const REGISTER_t reg, const uint8_t value);
+void MCP2515_setRegisters(MCP2515 MCP2515_Object, const REGISTER_t reg, const uint8_t values[], const uint8_t n);
+void MCP2515_modifyRegister(MCP2515 MCP2515_Object, const REGISTER_t reg, const uint8_t mask, const uint8_t data);
 
 void MCP2515_prepareId(uint8_t *buffer, const bool ext, const uint32_t id);
 
 MCP2515 MCP2515_init(gpio_num_t cs_pin, gpio_num_t int_pin);
-ERROR_t MCP2515_reset(void);
-ERROR_t MCP2515_setConfigMode();
-ERROR_t MCP2515_setListenOnlyMode();
-ERROR_t MCP2515_setSleepMode();
-ERROR_t MCP2515_setLoopbackMode();
-ERROR_t MCP2515_setNormalMode();
-ERROR_t MCP2515_setOneShotMode(bool set);
-ERROR_t MCP2515_setClkOut(const CAN_CLKOUT_t divisor);
-ERROR_t MCP2515_setBitrate(const CAN_SPEED_t canSpeed, const CAN_CLOCK_t canClock);
-ERROR_t MCP2515_setFilterMask(const MASK_t num, const bool ext, const uint32_t ulData);
-ERROR_t MCP2515_setFilter(const RXF_t num, const bool ext, const uint32_t ulData);
-ERROR_t MCP2515_sendMessage(const TXBn_t txbn, const CAN_FRAME frame);
-ERROR_t MCP2515_sendMessageAfterCtrlCheck(const CAN_FRAME frame);
-ERROR_t MCP2515_readMessage(const RXBn_t rxbn, const CAN_FRAME frame);
-ERROR_t MCP2515_readMessageAfterStatCheck(const CAN_FRAME frame);
-bool MCP2515_checkReceive(void);
-bool MCP2515_checkError(void);
-uint8_t MCP2515_getErrorFlags(void);
-void MCP2515_clearRXnOVRFlags(void);
-uint8_t MCP2515_getInterrupts(void);
-uint8_t MCP2515_getInterruptMask(void);
-void MCP2515_clearInterrupts(void);
-void MCP2515_clearTXInterrupts(void);
-uint8_t MCP2515_getStatus(void);
-void MCP2515_clearRXnOVR(void);
-void MCP2515_clearMERR();
-void MCP2515_clearERRIF();
+ERROR_t MCP2515_reset(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setConfigMode(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setListenOnlyMode(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setSleepMode(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setLoopbackMode(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setNormalMode(MCP2515 MCP2515_Object);
+ERROR_t MCP2515_setOneShotMode(MCP2515 MCP2515_Object, bool set);
+ERROR_t MCP2515_setClkOut(MCP2515 MCP2515_Object, const CAN_CLKOUT_t divisor);
+ERROR_t MCP2515_setBitrate(MCP2515 MCP2515_Object, const CAN_SPEED_t canSpeed, const CAN_CLOCK_t canClock);
+ERROR_t MCP2515_setFilterMask(MCP2515 MCP2515_Object, const MASK_t num, const bool ext, const uint32_t ulData);
+ERROR_t MCP2515_setFilter(MCP2515 MCP2515_Object, const RXF_t num, const bool ext, const uint32_t ulData);
+ERROR_t MCP2515_sendMessage(MCP2515 MCP2515_Object, const TXBn_t txbn, const CAN_FRAME frame);
+ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object, const CAN_FRAME frame);
+ERROR_t MCP2515_readMessage(MCP2515 MCP2515_Object, const RXBn_t rxbn, const CAN_FRAME frame);
+ERROR_t MCP2515_readMessageAfterStatCheck(MCP2515 MCP2515_Object, const CAN_FRAME frame);
+bool MCP2515_checkReceive(MCP2515 MCP2515_Object);
+bool MCP2515_checkError(MCP2515 MCP2515_Object);
+uint8_t MCP2515_getErrorFlags(MCP2515 MCP2515_Object);
+void MCP2515_clearRXnOVRFlags(MCP2515 MCP2515_Object);
+uint8_t MCP2515_getInterrupts(MCP2515 MCP2515_Object);
+uint8_t MCP2515_getInterruptMask(MCP2515 MCP2515_Object);
+void MCP2515_clearInterrupts(MCP2515 MCP2515_Object);
+void MCP2515_clearTXInterrupts(MCP2515 MCP2515_Object);
+uint8_t MCP2515_getStatus(MCP2515 MCP2515_Object);
+void MCP2515_clearRXnOVR(MCP2515 MCP2515_Object);
+void MCP2515_clearMERR(MCP2515 MCP2515_Object);
+void MCP2515_clearERRIF(MCP2515 MCP2515_Object);
 
 #endif
