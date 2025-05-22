@@ -5,6 +5,7 @@
 #include "stdint.h"
 #include "driver/spi_master.h"
 #include "can.h"
+#include "driver/gpio.h"
 
 #define TAG_MCP2515 "MCP2515"
 /*
@@ -468,6 +469,8 @@ typedef struct MCP2515_s{
 	RXBn_REGS RXB_ptr;
 
 	spi_device_handle_t spi;
+  gpio_num_t cs_pin;
+  gpio_num_t int_pin;
 }MCP2515_t[1], *MCP2515;
 
 ERROR_t MCP2515_setMode(const CANCTRL_REQOP_MODE_t mode);
@@ -480,7 +483,7 @@ void MCP2515_modifyRegister(const REGISTER_t reg, const uint8_t mask, const uint
 
 void MCP2515_prepareId(uint8_t *buffer, const bool ext, const uint32_t id);
 
-ERROR_t MCP2515_init();
+MCP2515 MCP2515_init(gpio_num_t cs_pin, gpio_num_t int_pin);
 ERROR_t MCP2515_reset(void);
 ERROR_t MCP2515_setConfigMode();
 ERROR_t MCP2515_setListenOnlyMode();
@@ -508,8 +511,5 @@ uint8_t MCP2515_getStatus(void);
 void MCP2515_clearRXnOVR(void);
 void MCP2515_clearMERR();
 void MCP2515_clearERRIF();
-
-extern MCP2515 MCP2515_Object;
-
 
 #endif

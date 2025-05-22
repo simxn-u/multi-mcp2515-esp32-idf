@@ -4,15 +4,13 @@
 #include "mcp2515.h"
 #include <string.h>
 
-MCP2515 MCP2515_Object = NULL;
-
-ERROR_t MCP2515_init() {
+MCP2515 MCP2515_init(gpio_num_t cs_pin, gpio_num_t int_pin) {
 
   // MEMORY ALLOCATIONS FOR MCP2515 STRUCTURE
-  MCP2515_Object = (MCP2515)malloc(sizeof(MCP2515_t[1]));
+  MCP2515 MCP2515_Object = (MCP2515)malloc(sizeof(MCP2515_t[1]));
   if (MCP2515_Object == NULL) {
     ESP_LOGE(TAG_MCP2515, "Couldn't initialize MCP2515_Object. (NULL pointer)");
-    return ERROR_FAIL;
+    return NULL;
   }
   MCP2515_Object->TXB_ptr = NULL;
   MCP2515_Object->RXB_ptr = NULL;
@@ -21,8 +19,12 @@ ERROR_t MCP2515_init() {
   if (MCP2515_Object->TXB_ptr == NULL || MCP2515_Object->RXB_ptr == NULL) {
     ESP_LOGE(TAG_MCP2515, "Couldn't initialize MCP2515_Object->(TXB_ptr || "
                           "RXB_ptr). (NULL pointer)");
-    return ERROR_FAIL;
+    return NULL;
   }
+
+  // SPI INITIALIZATION
+  MCP2515_Object->cs_pin = cs_pin;
+  MCP2515_Object->int_pin = int_pin;
 
   // TXBn and RXBn REGISTER INITIALIZATION
   MCP2515_Object->TXB_ptr[0].CTRL = MCP_TXB0CTRL;
@@ -47,7 +49,9 @@ ERROR_t MCP2515_init() {
   MCP2515_Object->RXB_ptr[1].SIDH = MCP_RXB1SIDH;
   MCP2515_Object->RXB_ptr[1].CANINTF_RXnIF = CANINTF_RX1IF;
 
-  return ERROR_OK;
+  MCP2515_Object->ERROR = ERROR_OK;
+
+  return MCP2515_Object;
 }
 
 ERROR_t MCP2515_reset(void) {
