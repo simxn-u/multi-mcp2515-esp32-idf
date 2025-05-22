@@ -2,7 +2,38 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mcp2515.h"
+#include "soc/spi_periph.h"
 #include <string.h>
+
+ERROR_t MCP2515_setupSpi(MCP2515 MCP2515_Object, spi_host_device_t HOST,
+                         gpio_num_t MISO, gpio_num_t MOSI, gpio_num_t CLK) {
+
+  static bool bus_initialized[SOC_SPI_PERIPH_NUM] = {false};
+
+  if (!bus_initialized[HOST]) {
+    spi_bus_config_t bus_cfg = {
+        .miso_io_num = MISO,
+        .mosi_io_num = MOSI,
+        .sclk_io_num = CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 0,
+    };
+
+    esp_err_t ret = spi_bus_initialize(HOST, &bus_cfg, SPI_DMA_CH_AUTO);
+    if (ret != ESP_OK)
+      return ret;
+    bus_initialized[HOST] = true;
+  }
+
+  spi_device_interface_config_t dev_cfg = {.mode = 0,
+                                           .clock_speed_hz = SPI_CLOCK,
+                                           .spics_io_num =
+                                               MCP2515_Object->cs_pin,
+                                           .queue_size = 4};
+
+  return spi_bus_add_device(HOST, &dev_cfg, &MCP2515_Object->spi);
+}
 
 MCP2515 MCP2515_init(gpio_num_t cs_pin, gpio_num_t int_pin) {
 

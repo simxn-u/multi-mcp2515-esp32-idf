@@ -473,6 +473,9 @@ typedef struct MCP2515_s{
   gpio_num_t int_pin;
 }MCP2515_t[1], *MCP2515;
 
+ERROR_t MCP2515_setupSpi(MCP2515 MCP2515_Object, spi_host_device_t HOST,
+                         gpio_num_t MISO, gpio_num_t MOSI, gpio_num_t clk);
+
 ERROR_t MCP2515_setMode(MCP2515 MCP2515_Object, const CANCTRL_REQOP_MODE_t mode);
 
 uint8_t MCP2515_readRegister(MCP2515 MCP2515_Object, const REGISTER_t reg);
