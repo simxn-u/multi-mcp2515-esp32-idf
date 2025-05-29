@@ -368,7 +368,7 @@ ERROR_t MCP2515_setMode(MCP2515 MCP2515_Object,
 
 ERROR_t MCP2515_setBitrate(MCP2515 MCP2515_Object, const CAN_SPEED_t canSpeed,
                            CAN_CLOCK_t canClock) {
-  printf("Hello from MCP2515_setBitrate!\n\r");
+
   ERROR_t ERROR_t = MCP2515_setConfigMode(MCP2515_Object);
   if (ERROR_t != ERROR_OK) {
     return ERROR_FAIL;
