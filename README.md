@@ -2,9 +2,10 @@
 
 it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github.com/zeroomega/esp32-mcp2515)
 
-**----- DISCLAIMER: NOT TESTED (yet) -----**
-
-- Supports **multiple MCP2515 instances** via struct-based object handling
+---
+Just a note: I'm a quite new C programmer, so this code may not be the best example of C programming practices. If you have any suggestions or improvements, please feel free to contribute!
+---
+**Features:**
 - All library functions operate on an `MCP2515` pointer (no global state)
 - Allows flexible configuration of:
   * `MISO`, `MOSI`, `CLK` pins per SPI bus
@@ -13,30 +14,178 @@ it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github
   * Initialize the selected SPI bus (only once)
   * Attach individual MCP2515 devices via `spi_bus_add_device()`
 
+**Todo:**
+- Implement all of the structs and functions below
+- Improve - a lot
 
-**Example of usage: (not tested as well, should work)**
+---
+**Example of usage:**
 ```c
-MCP2515 can1 = MCP2515_init(GPIO_NUM_5, GPIO_NUM_4);   // CS, INT for MCP1
-MCP2515 can2 = MCP2515_init(GPIO_NUM_18, GPIO_NUM_19); // CS, INT for MCP2
+#define MCP_RX0IE 0x01
+#define MCP_RX1IE 0x02
 
-// Shared SPI bus setup
-MCP2515_setupSpi(can1, SPI2_HOST, GPIO_NUM_13, GPIO_NUM_11, GPIO_NUM_12); // MISO, MOSI, CLK
-MCP2515_setupSpi(can2, SPI2_HOST, GPIO_NUM_13, GPIO_NUM_11, GPIO_NUM_12); // Same bus
+#define TAG "main"
 
-// Usage
-MCP2515_reset(can1);
-MCP2515_setBitrate(can1, CAN_500KBPS, MCP_8MHZ);
-MCP2515_setNormalMode(can1);
+typedef struct {
+  MCP2515 can;
+  QueueHandle_t queue;
+} CanIsrContext_t;
 
-CAN_FRAME_t frame = { .can_id = 0x123 | CAN_EFF_FLAG, .can_dlc = 8 };
-MCP2515_sendMessageAfterCtrlCheck(can1, &frame);
+typedef struct {
+  const char *name;
+  MCP2515 can;
+  QueueHandle_t queue;
+} CanTaskContext_t;
+
+typedef struct {
+  const char *name;
+  gpio_num_t cs_pin, int_pin;
+  spi_host_device_t spi_host;
+  gpio_num_t miso, mosi, sclk;
+
+  MCP2515 can;
+  QueueHandle_t queue;
+
+  CanIsrContext_t isr_ctx;
+  CanTaskContext_t task_ctx;
+} CanInstance_t;
+
+static CanInstance_t can1 = {
+    .name = "can1",
+    .cs_pin = GPIO_NUM_5,
+    .int_pin = GPIO_NUM_6,
+    .spi_host = SPI2_HOST,
+    .miso = GPIO_NUM_2,
+    .mosi = GPIO_NUM_3,
+    .sclk = GPIO_NUM_4,
+};
+static CanInstance_t can2 = {
+    .name = "can2",
+    .cs_pin = GPIO_NUM_23,
+    .int_pin = GPIO_NUM_27,
+    .spi_host = SPI3_HOST,
+    .miso = GPIO_NUM_21,
+    .mosi = GPIO_NUM_22,
+    .sclk = GPIO_NUM_20,
+};
+
+static void IRAM_ATTR generic_can_isr_handler(void *arg) {
+  CanIsrContext_t *ctx = (CanIsrContext_t *)arg;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  uint8_t dummy = 1;
+  xQueueSendFromISR(ctx->queue, &dummy, &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken) {
+    portYIELD_FROM_ISR();
+  }
+}
+
+static void generic_can_queue_task(void *arg) {
+  CanTaskContext_t *ctx = (CanTaskContext_t *)arg;
+  MCP2515 can = ctx->can;
+  uint8_t flag;
+  struct can_frame frame;
+
+  while (1) {
+    if (xQueueReceive(ctx->queue, &flag, portMAX_DELAY)) {
+      uint8_t irq = MCP2515_getInterrupts(can);
+      print_timestamp();
+
+      for (int i = 0; i < 2; i++) {
+        RXBn_t rxb = i == 0 ? RXB0 : RXB1;
+        if (irq & (1 << rxb)) {
+          if (MCP2515_readMessage(can, rxb, &frame) == ERROR_OK) {
+            printf("%s: ID: 0x%08" PRIX32 ", DLC: %d, Data:", ctx->name,
+                   frame.can_id, frame.can_dlc);
+            for (int j = 0; j < frame.can_dlc; j++) {
+              printf(" %02X", frame.data[j]);
+            }
+            printf("\n");
+          }
+          MCP2515_modifyRegister(can, MCP_CANINTF, (1 << rxb), 0);
+        }
+      }
+    }
+  }
+}
+
+bool setup_can_instance(CanInstance_t *inst) {
+  inst->can = MCP2515_init(inst->cs_pin, inst->int_pin);
+  if (inst->can == NULL) {
+    ESP_LOGE(inst->name, "Failed to initialize MCP2515");
+    return false;
+  }
+
+  if (MCP2515_setupSpi(inst->can, inst->spi_host, inst->miso, inst->mosi,
+                       inst->sclk) != ESP_OK ||
+      MCP2515_reset(inst->can) != ESP_OK ||
+      MCP2515_setBitrate(inst->can, CAN_500KBPS, MCP_20MHZ) != ESP_OK ||
+      MCP2515_setNormalMode(inst->can) != ESP_OK) {
+    ESP_LOGE(TAG, "%s: setup failed", inst->name);
+    return false;
+  }
+
+  MCP2515_modifyRegister(inst->can, MCP_CANINTE, MCP_RX0IE | MCP_RX1IE,
+                         MCP_RX0IE | MCP_RX1IE);
+
+  inst->queue = xQueueCreate(100, sizeof(uint8_t));
+  inst->isr_ctx = (CanIsrContext_t){.can = inst->can, .queue = inst->queue};
+  inst->task_ctx = (CanTaskContext_t){
+      .name = inst->name, .can = inst->can, .queue = inst->queue};
+
+  gpio_set_intr_type(inst->int_pin, GPIO_INTR_NEGEDGE);
+  gpio_isr_handler_add(inst->int_pin, generic_can_isr_handler, &inst->isr_ctx);
+
+  xTaskCreate(generic_can_queue_task, inst->name, 2048, &inst->task_ctx, 10,
+              NULL);
+
+  return true;
+}
+
+static void can_sender_task(void *arg) {
+  MCP2515 can = (MCP2515)arg;
+  struct can_frame tx0 = {.can_id = 0x123, .can_dlc = 8};
+  struct can_frame tx1 = {.can_id = 0x321, .can_dlc = 8};
+
+  while (1) {
+    for (int i = 0; i < 8; i++) {
+      tx0.data[i] = (tx0.data[i] + 1) % 256;
+      tx1.data[i] = 255 - tx0.data[i];
+    }
+
+    if (MCP2515_sendMessageAfterCtrlCheck(can, &tx0) != ERROR_OK) {
+      ESP_LOGE(TAG, "TX0 failed");
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    if (MCP2515_sendMessageAfterCtrlCheck(can, &tx1) != ERROR_OK) {
+      ESP_LOGE(TAG, "TX1 failed");
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+}
+
+int app_main() {
+  gpio_install_isr_service(0);
+  gpio_config_t io_conf = {
+      .intr_type = GPIO_INTR_NEGEDGE,
+      .mode = GPIO_MODE_INPUT,
+      .pin_bit_mask = (1ULL << can1.int_pin) | (1ULL << can2.int_pin),
+      .pull_up_en = GPIO_PULLUP_ENABLE,
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,
+  };
+  ESP_ERROR_CHECK(gpio_config(&io_conf));
+
+  if (!setup_can_instance(&can1))
+    return -1;
+  if (!setup_can_instance(&can2))
+    return -1;
+
+  xTaskCreate(can_sender_task, "can1_sender_task", 2048, (void *)can1.can, 10,
+              NULL);
+
+  return 0;
+}
 ```
-
-**Next steps:**
-- Test everything
-- maybe struct for spi bus config
-- modularize the code?
-- we'll see
 
 ---
 
