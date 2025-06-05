@@ -810,18 +810,22 @@ ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object,
 static int currentBuffer = 0;
 ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
 
-  for (int retries = 0; retries < 50; retries++) { // max ~50ms Wartezeit
+  for (int retries = 0; retries < 50; retries++) {
     for (int offset = 0; offset < 3; offset++) {
       int idx = (currentBuffer + offset) % 3;
       const TXBn_REGS txbuf = &can->TXB_ptr[idx];
       uint8_t ctrlval = MCP2515_readRegister(can, txbuf->CTRL);
 
       if ((ctrlval & TXB_TXREQ) == 0) {
-        currentBuffer = (idx + 1) % 3;
-        return MCP2515_sendMessage(can, idx, frame);
+        ERROR_t result = MCP2515_sendMessage(can, idx, frame);
+        if (result == ERROR_OK) {
+          MCP2515_modifyRegister(can, MCP_CANINTF, (1 << idx), 0);
+          currentBuffer = (idx + 1) % 3;
+        }
+        return result;
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(1)); // Warten auf Pufferfreigabe
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 
   return ERROR_ALLTXBUSY;
