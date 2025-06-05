@@ -819,12 +819,17 @@ ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
       if ((ctrlval & TXB_TXREQ) == 0) {
         ERROR_t result = MCP2515_sendMessage(can, idx, frame);
         if (result == ERROR_OK) {
-          MCP2515_modifyRegister(can, MCP_CANINTF, (1 << idx), 0);
+          const uint8_t txIfBits[3] = {0x04, 0x08, 0x10};
+          MCP2515_modifyRegister(can, MCP_CANINTF, txIfBits[idx], 0);
+
           currentBuffer = (idx + 1) % 3;
         } else {
           ESP_LOGE("MCP2515", "MCP2515_sendMessage failed at TXB%d: %d", idx,
                    result);
         }
+        uint8_t intf = MCP2515_readRegister(can, MCP_CANINTF);
+        printf("CANINTF: 0x%02X\n", intf);
+
         return result;
       }
     }
