@@ -429,7 +429,7 @@ typedef enum {
 	MCP_RXB1DATA = (uint8_t)0x76
 }REGISTER_t;
 
-static const uint32_t SPI_CLOCK = 80000000; // 80MHz
+static const uint32_t SPI_CLOCK = 10000000; // 10MHz
 static const uint8_t STAT_RXIF_MASK = STAT_RX0IF | STAT_RX1IF;
 static const uint8_t EFLG_ERRORMASK = EFLG_RX1OVR
 									| EFLG_RX0OVR
