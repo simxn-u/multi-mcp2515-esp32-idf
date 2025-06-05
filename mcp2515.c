@@ -807,6 +807,21 @@ ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object,
   return ERROR_ALLTXBUSY;
 }
 
+static int currentBuffer = 0;
+ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 MCP2515_Object,
+                                      const CAN_FRAME frame) {
+  for (int offset = 0; offset < N_TXBUFFERS; offset++) {
+    int idx = (currentBuffer + offset) % N_TXBUFFERS;
+    const TXBn_REGS txbuf = &MCP2515_Object->TXB_ptr[idx];
+    uint8_t ctrlval = MCP2515_readRegister(MCP2515_Object, txbuf->CTRL);
+    if ((ctrlval & TXB_TXREQ) == 0) {
+      currentBuffer = (idx + 1) % N_TXBUFFERS;
+      return MCP2515_sendMessage(MCP2515_Object, idx, frame);
+    }
+  }
+  return ERROR_ALLTXBUSY;
+}
+
 ERROR_t MCP2515_readMessage(MCP2515 MCP2515_Object, const RXBn_t rxbn,
                             const CAN_FRAME frame) {
   const RXBn_REGS rxb = &MCP2515_Object->RXB_ptr[rxbn];

@@ -500,6 +500,7 @@ ERROR_t MCP2515_setFilterMask(MCP2515 MCP2515_Object, const MASK_t num, const bo
 ERROR_t MCP2515_setFilter(MCP2515 MCP2515_Object, const RXF_t num, const bool ext, const uint32_t ulData);
 ERROR_t MCP2515_sendMessage(MCP2515 MCP2515_Object, const TXBn_t txbn, const CAN_FRAME frame);
 ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object, const CAN_FRAME frame);
+ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 MCP2515_Object, const CAN_FRAME frame);
 ERROR_t MCP2515_readMessage(MCP2515 MCP2515_Object, const RXBn_t rxbn, const CAN_FRAME frame);
 ERROR_t MCP2515_readMessageAfterStatCheck(MCP2515 MCP2515_Object, const CAN_FRAME frame);
 bool MCP2515_checkReceive(MCP2515 MCP2515_Object);
