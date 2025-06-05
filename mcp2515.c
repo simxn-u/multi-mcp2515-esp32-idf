@@ -809,7 +809,6 @@ ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object,
 
 static int currentBuffer = 0;
 ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
-  static int currentBuffer = 0;
 
   for (int retries = 0; retries < 50; retries++) { // max ~50ms Wartezeit
     for (int offset = 0; offset < 3; offset++) {
