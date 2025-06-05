@@ -808,8 +808,8 @@ ERROR_t MCP2515_sendMessageAfterCtrlCheck(MCP2515 MCP2515_Object,
 }
 
 static int currentBuffer = 0;
-ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
 
+ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
   for (int retries = 0; retries < 50; retries++) {
     for (int offset = 0; offset < 3; offset++) {
       int idx = (currentBuffer + offset) % 3;
@@ -821,10 +821,14 @@ ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
         if (result == ERROR_OK) {
           MCP2515_modifyRegister(can, MCP_CANINTF, (1 << idx), 0);
           currentBuffer = (idx + 1) % 3;
+        } else {
+          ESP_LOGE("MCP2515", "MCP2515_sendMessage failed at TXB%d: %d", idx,
+                   result);
         }
         return result;
       }
     }
+
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 
