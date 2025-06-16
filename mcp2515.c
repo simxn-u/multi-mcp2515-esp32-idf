@@ -826,15 +826,13 @@ ERROR_t MCP2515_sendMessageRoundRobin(MCP2515 can, const CAN_FRAME frame) {
         } else {
           ESP_LOGE("MCP2515", "MCP2515_sendMessage failed at TXB%d: %d", idx,
                    result);
+          esp_rom_delay_us(1000);
         }
-        uint8_t intf = MCP2515_readRegister(can, MCP_CANINTF);
-        printf("CANINTF: 0x%02X\n", intf);
+        esp_rom_delay_us(5);
 
         return result;
       }
     }
-
-    vTaskDelay(pdMS_TO_TICKS(1));
   }
 
   return ERROR_ALLTXBUSY;
