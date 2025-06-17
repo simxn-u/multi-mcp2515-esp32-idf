@@ -1,6 +1,6 @@
 # ESP32 MCP2515 CAN interface library in C, for ESP-IDF framework.
 
-it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github.com/zeroomega/esp32-mcp2515)
+it's a fork of [MCP2515 CAN interface library in C++ for ESP-IDF](https://github.com/Microver-Electronics/mcp2515-esp32-idf)
 
 ---
 Just a note: I'm a quite new C programmer, so this code may not be the best example of C programming practices. If you have any suggestions or improvements, please feel free to contribute!
